@@ -32,22 +32,31 @@ public class ParseJson {
                 Files.createFile(path);
             }
             String jsonData = new String(Files.readAllBytes(path));
-            JsonArray jsonArray = new Gson().fromJson(jsonData, JsonArray.class);
-            if (jsonArray == null) {
+            Type listType = new TypeToken<ArrayList<FileInfo>>() {
+            }.getType();
+            ArrayList<FileInfo> list = new Gson().fromJson(jsonData, listType);
+            if (list == null) {
                 return fileInfoHashMap;
             }
-            for (JsonElement jsonElement : jsonArray) {
-//                String filename = jsonElement.getAsJsonObject().get("fileName").getAsString();
-//                FileInfo fileInfo = new Gson().fromJson(jsonElement.getAsJsonObject().get("fileInfo"), FileInfo.class);
-//                fileInfoHashMap.put(filename, fileInfo);
-                FileInfo fileInfo = new Gson().fromJson(jsonElement, FileInfo.class);
+            for (FileInfo fileInfo : list) {
                 fileInfoHashMap.put(fileInfo.fileName, fileInfo);
             }
-//            for (String filename : fileInfoHashMap.keySet()) {
-//
-//                System.out.println(filename);
-//                System.out.println(fileInfoHashMap.get(filename).toString());
+//            JsonArray jsonArray = new Gson().fromJson(jsonData, JsonArray.class);
+//            if (jsonArray == null) {
+//                return fileInfoHashMap;
 //            }
+//            for (JsonElement jsonElement : jsonArray) {
+////                String filename = jsonElement.getAsJsonObject().get("fileName").getAsString();
+////                FileInfo fileInfo = new Gson().fromJson(jsonElement.getAsJsonObject().get("fileInfo"), FileInfo.class);
+////                fileInfoHashMap.put(filename, fileInfo);
+//                FileInfo fileInfo = new Gson().fromJson(jsonElement, FileInfo.class);
+//                fileInfoHashMap.put(fileInfo.fileName, fileInfo);
+//            }
+////            for (String filename : fileInfoHashMap.keySet()) {
+////
+////                System.out.println(filename);
+////                System.out.println(fileInfoHashMap.get(filename).toString());
+////            }
             return fileInfoHashMap;
         } catch (Exception e) {
             e.printStackTrace();

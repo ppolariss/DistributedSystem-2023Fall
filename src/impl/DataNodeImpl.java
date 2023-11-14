@@ -36,7 +36,8 @@ public class DataNodeImpl extends DataNodePOA {
         init(numberOfDataNode);
     }
 
-    public DataNodeImpl(int dataNodeId) {
+    public DataNodeImpl(NameNode nameNode, int dataNodeId) {
+        this.nameNode = nameNode;
         init(dataNodeId);
         numberOfDataNode = dataNodeId;
     }

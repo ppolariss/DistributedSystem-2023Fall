@@ -13,6 +13,9 @@ public class ClientLauncher {
                 String s;
                 try {
                     s = in.nextLine();
+                    if (s.isEmpty()) {
+                        continue;
+                    }
                     client.parse(s);
                 } catch (NoSuchElementException nsee) {
                     s = "exit";

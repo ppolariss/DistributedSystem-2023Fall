@@ -301,9 +301,12 @@ public class ClientImpl implements Client {
             // obtain a remote object
             nameNode = NameNodeHelper.narrow(ncRef.resolve_str("NameNode"));
             System.out.println("NameNode is obtained.");
-            for (int dataNodeId = 1; dataNodeId < 2; dataNodeId++) {
-                dataNodes[dataNodeId] = DataNodeHelper.narrow(ncRef.resolve_str("DataNode" + dataNodeId));
-                System.out.println("DataNode" + dataNodeId + " is obtained.");
+            for (int dataNodeId = 1; dataNodeId < MAX_DATA_NODE + 1; dataNodeId++) {
+                try {
+                    dataNodes[dataNodeId] = DataNodeHelper.narrow(ncRef.resolve_str("DataNode" + dataNodeId));
+                    System.out.println("DataNode" + dataNodeId + " is obtained.");
+                } catch (Exception ignored) {
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
