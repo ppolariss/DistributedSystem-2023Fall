@@ -1,0 +1,24 @@
+[
+  {
+    "fileSize": 0,
+    "blockIdToDataNodeId": {
+      "1": 1
+    },
+    "createTime": 1699885306648,
+    "lastModified": 1699885306648,
+    "lastAccess": 1699885306648,
+    "fileName": "test.txt",
+    "dirty": false
+  },
+  {
+    "fileSize": 0,
+    "blockIdToDataNodeId": {
+      "2": 1
+    },
+    "createTime": 1699885556370,
+    "lastModified": 1699885556370,
+    "lastAccess": 1699885556370,
+    "fileName": "hh",
+    "dirty": false
+  }
+]
