@@ -23,10 +23,11 @@ public class ClientImpl implements Client {
     static final String CMD_EXIT = "exit";
 
 
-    private static final int MAX_DATA_NODE = 4;
+    //    private static final int MAX_DATA_NODE = 4;
     private static final int maxBlockSize = 4 * 1024;
     private NameNode nameNode;
-    private DataNode[] dataNodes = new DataNode[MAX_DATA_NODE + 1];
+    //    private DataNode[] dataNodes = new DataNode[MAX_DATA_NODE + 1];
+    ArrayList<DataNode> dataNodeList = new ArrayList<>();
 
 
     //    fdMap: fd -> file
@@ -84,14 +85,14 @@ public class ClientImpl implements Client {
 
     private boolean appendContent(File file, int nextBlockId, int dataNodeId, byte[] append) {
         boolean isCreateNewFile = append.length == 0;
-        DataNode dataNode = dataNodes[dataNodeId];
+//        DataNode dataNode = dataNodes[dataNodeId];
+        DataNode dataNode = dataNodeList.get(dataNodeId - 1);
         //      update blockIdToSize blockIdToDataNodeId and NameNode
 //        for loop
         int lastSize = file.fi.blockIdToSize.get(nextBlockId);
         boolean quit = true;
 //        for update
         ArrayList<Integer> newBlockIdList = new ArrayList<>();
-        int oldBlockId = nextBlockId;
 
         while (true) {
             if (lastSize + append.length > maxBlockSize) {
@@ -157,7 +158,8 @@ public class ClientImpl implements Client {
         Set<Integer> blockIds = file.fi.blockIdToDataNodeId.keySet();
         for (Integer blockId : blockIds) {
             int dataNodeId = file.fi.blockIdToDataNodeId.get(blockId);
-            DataNode dataNode = dataNodes[dataNodeId];
+//            DataNode dataNode = dataNodes[dataNodeId];
+            DataNode dataNode = dataNodeList.get(dataNodeId - 1);
             byte[] bytes = dataNode.read(blockId);
             if (bytes == null) {
                 System.out.println("INFO: read failed");
@@ -301,11 +303,13 @@ public class ClientImpl implements Client {
             // obtain a remote object
             nameNode = NameNodeHelper.narrow(ncRef.resolve_str("NameNode"));
             System.out.println("NameNode is obtained.");
-            for (int dataNodeId = 1; dataNodeId < MAX_DATA_NODE + 1; dataNodeId++) {
+            for (int dataNodeId = 1; true; dataNodeId++) {
                 try {
-                    dataNodes[dataNodeId] = DataNodeHelper.narrow(ncRef.resolve_str("DataNode" + dataNodeId));
+                    dataNodeList.add(DataNodeHelper.narrow(ncRef.resolve_str("DataNode" + dataNodeId)));
+//                    dataNodes[dataNodeId] = DataNodeHelper.narrow(ncRef.resolve_str("DataNode" + dataNodeId));
                     System.out.println("DataNode" + dataNodeId + " is obtained.");
                 } catch (Exception ignored) {
+                    break;
                 }
             }
         } catch (Exception e) {

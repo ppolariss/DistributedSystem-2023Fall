@@ -165,7 +165,7 @@ public class DataNodeImpl extends DataNodePOA {
         ParseJson.writeBackDataInfo(fileName + "info.json", blockIds);
     }
 
-    public void setNameNode(NameNode nameNode) {
-        this.nameNode = nameNode;
-    }
+//    public void setNameNode(NameNode nameNode) {
+//        this.nameNode = nameNode;
+//    }
 }
