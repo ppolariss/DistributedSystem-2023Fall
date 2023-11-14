@@ -8,7 +8,7 @@ module api {
     interface NameNode{
         string open(in string filepath,in long mode);
         void close(in string fd);
-        void registerDataNode(in long dataNodeId, in long maxBlockId);
+        void registerDataNode(in long dataNodeId, in string s);
         void registerBlock(in long oldBlockId, in long newBlockId);
         string updateFile(in string filepath);
     //TODO: complete the interface design

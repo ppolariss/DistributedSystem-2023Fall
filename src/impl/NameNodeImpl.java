@@ -1,18 +1,15 @@
 package impl;
 //TODO: your implementation
 
-import api.DataNode;
-import api.DataNodeHelper;
 import api.NameNodePOA;
-import org.omg.CosNaming.NamingContextExt;
-import org.omg.CosNaming.NamingContextPackage.CannotProceed;
-import org.omg.CosNaming.NamingContextPackage.InvalidName;
-import org.omg.CosNaming.NamingContextPackage.NotFound;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import utils.File;
 import utils.FileDesc;
 import utils.FileInfo;
 import utils.ParseJson;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,13 +29,13 @@ public class NameNodeImpl extends NameNodePOA {
 //    }
 
 
-    public class DataNodeInfo {
+    public static class DataNodeInfo {
         int dataNodeId;
-        int maxBlockId;
+        HashMap<Integer, Integer> blockIds;
 
-        public DataNodeInfo(int dataNodeId, int maxBlockId) {
+        public DataNodeInfo(int dataNodeId, HashMap<Integer, Integer> blockIds) {
             this.dataNodeId = dataNodeId;
-            this.maxBlockId = maxBlockId;
+            this.blockIds = blockIds;
         }
     }
 
@@ -62,6 +59,8 @@ public class NameNodeImpl extends NameNodePOA {
             if (fileDescs != null) {
                 for (FileDesc fileDesc : fileDescs) {
                     if (isWrite(fileDesc.mode)) {
+                        System.out.println(name + writeAble);
+                        System.out.println("file is being written");
                         return null;
                     }
                 }
@@ -109,26 +108,45 @@ public class NameNodeImpl extends NameNodePOA {
         return null;
     }
 
-
-    public FileInfo create(String fileName) {
-//        find the dataNode with the least block
+    //        find the dataNode with the least block
 //        not write back yet
+    public FileInfo create(String fileName) {
+//        getMinSize -> dataNode nextId
+//        update fileMap and dataNodeInfo
         int dataNodeId = 0;
-        int maxBlockId = -1;
+        int minSize = -1;
         int index = 0;
+//        for (int i = 0; i < dataNodeInfos.size(); i++) {
+//            DataNodeInfo dataNodeInfo = dataNodeInfos.get(i);
+//            int tmpSize = 0;
+//            for (int size : dataNodeInfo.blockIds.values()) {
+//                tmpSize = Math.max(tmpSize, size);
+//            }
+//            if (minSize == -1 || (tmpSize < minSize)) {
+//                minSize = tmpSize;
+//                dataNodeId = dataNodeInfo.dataNodeId;
+//                index = i;
+//            }
+//        }
         for (int i = 0; i < dataNodeInfos.size(); i++) {
             DataNodeInfo dataNodeInfo = dataNodeInfos.get(i);
-            if (maxBlockId == -1 || (dataNodeInfo.maxBlockId < maxBlockId)) {
-                maxBlockId = dataNodeInfo.maxBlockId;
+            int tmpSize = dataNodeInfo.blockIds.size();
+            if (minSize == -1 || (tmpSize < minSize)) {
+                minSize = tmpSize;
                 dataNodeId = dataNodeInfo.dataNodeId;
                 index = i;
             }
         }
-        if (maxBlockId == -1) {
+        if (minSize == -1) {
             return null;
         }
-        dataNodeInfos.get(index).maxBlockId++;
-        FileInfo fileInfo = new FileInfo(dataNodeId, maxBlockId + 1, fileName);
+        int nextId = 0;
+        for (int id : dataNodeInfos.get(index).blockIds.keySet()) {
+            nextId = Math.max(nextId, id);
+        }
+        nextId++;
+        dataNodeInfos.get(index).blockIds.put(nextId, 0);
+        FileInfo fileInfo = new FileInfo(dataNodeId, nextId, fileName);
         fileMap.put(fileName, fileInfo);
         return fileInfo;
     }
@@ -139,8 +157,15 @@ public class NameNodeImpl extends NameNodePOA {
     }
 
     @Override
-    public void registerDataNode(int dataNodeId, int maxBlockId) {
-        DataNodeInfo dataNodeInfo = new DataNodeInfo(dataNodeId, maxBlockId);
+    public void registerDataNode(int dataNodeId, String s) {
+        HashMap<Integer, Integer> blockIds;
+        Type type = new TypeToken<HashMap<Integer, Integer>>() {
+        }.getType();
+        blockIds = new Gson().fromJson(s, type);
+        if (blockIds == null) {
+            blockIds = new HashMap<>();
+        }
+        DataNodeInfo dataNodeInfo = new DataNodeInfo(dataNodeId, blockIds);
         dataNodeInfos.add(dataNodeInfo);
 
 //        for (int dataNodeId = 0; dataNodeId < MAX_DATA_NODE; dataNodeId++) {

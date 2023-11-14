@@ -2,23 +2,30 @@
   {
     "fileSize": 0,
     "blockIdToDataNodeId": {
-      "1": 1
+      "6": 1
     },
-    "createTime": 1699885306648,
-    "lastModified": 1699885306648,
-    "lastAccess": 1699885306648,
+    "blockIdToSize": {
+      "6": 0
+    },
+    "createTime": 1699952747583,
+    "lastModified": 1699952747583,
+    "lastAccess": 1699952747583,
     "fileName": "test.txt",
     "dirty": false
   },
   {
     "fileSize": 0,
     "blockIdToDataNodeId": {
-      "2": 1
+      "7": 1
     },
-    "createTime": 1699885556370,
-    "lastModified": 1699885556370,
-    "lastAccess": 1699885556370,
-    "fileName": "hh",
+    "blockIdToSize": {
+      "7": 0
+    },
+    "createTime": 1699952987476,
+    "lastModified": 1699952987476,
+    "lastAccess": 1699952987476,
+    "fileName": "p",
     "dirty": false
-  }
+  },
+  null
 ]

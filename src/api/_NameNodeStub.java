@@ -5,7 +5,7 @@ package api;
 * api/_NameNodeStub.java .
 * 由IDL-to-Java 编译器 (可移植), 版本 "3.2"生成
 * 从api.idl
-* 2023年11月13日 星期一 下午09时42分08秒 CST
+* 2023年11月14日 星期二 下午04时08分20秒 CST
 */
 
 public class _NameNodeStub extends org.omg.CORBA.portable.ObjectImpl implements api.NameNode
@@ -51,13 +51,13 @@ public class _NameNodeStub extends org.omg.CORBA.portable.ObjectImpl implements 
             }
   } // close
 
-  public void registerDataNode (int dataNodeId, int maxBlockId)
+  public void registerDataNode (int dataNodeId, String s)
   {
             org.omg.CORBA.portable.InputStream $in = null;
             try {
                 org.omg.CORBA.portable.OutputStream $out = _request ("registerDataNode", true);
                 $out.write_long (dataNodeId);
-                $out.write_long (maxBlockId);
+                $out.write_string (s);
                 $in = _invoke ($out);
                 return;
             } catch (org.omg.CORBA.portable.ApplicationException $ex) {
@@ -65,7 +65,7 @@ public class _NameNodeStub extends org.omg.CORBA.portable.ObjectImpl implements 
                 String _id = $ex.getId ();
                 throw new org.omg.CORBA.MARSHAL (_id);
             } catch (org.omg.CORBA.portable.RemarshalException $rm) {
-                registerDataNode (dataNodeId, maxBlockId        );
+                registerDataNode (dataNodeId, s        );
             } finally {
                 _releaseReply ($in);
             }

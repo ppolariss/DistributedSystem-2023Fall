@@ -5,7 +5,7 @@ package api;
 * api/NameNodePOA.java .
 * 由IDL-to-Java 编译器 (可移植), 版本 "3.2"生成
 * 从api.idl
-* 2023年11月13日 星期一 下午09时42分08秒 CST
+* 2023年11月14日 星期二 下午04时08分20秒 CST
 */
 
 public abstract class NameNodePOA extends org.omg.PortableServer.Servant
@@ -57,8 +57,8 @@ public abstract class NameNodePOA extends org.omg.PortableServer.Servant
        case 2:  // api/NameNode/registerDataNode
        {
          int dataNodeId = in.read_long ();
-         int maxBlockId = in.read_long ();
-         this.registerDataNode (dataNodeId, maxBlockId);
+         String s = in.read_string ();
+         this.registerDataNode (dataNodeId, s);
          out = $rh.createReply();
          break;
        }

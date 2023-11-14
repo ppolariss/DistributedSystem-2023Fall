@@ -8,6 +8,7 @@ public class ClientLauncher {
         try {
             Scanner in = new Scanner(System.in);
             while (true) {
+                System.out.print(">> ");
                 String s = in.nextLine();
                 client.parse(s);
 //            if (string.isEmpty()) {

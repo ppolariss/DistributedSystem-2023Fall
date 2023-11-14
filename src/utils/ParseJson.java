@@ -3,13 +3,14 @@ package utils;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.reflect.TypeToken;
 
+import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 
 public class ParseJson {
 //    public static String toJson(Object obj) {
@@ -48,9 +49,12 @@ public class ParseJson {
     }
 
     public static void writeBackFileInfo(String filePath, HashMap<String, FileInfo> fileInfoHashMap) {
+//        it's magic to find some element of hashMap is null
+//        so I remove null directly
         ArrayList<FileInfo> fileInfos = new ArrayList<>();
         for (String filename : fileInfoHashMap.keySet()) {
-            fileInfos.add(fileInfoHashMap.get(filename));
+            if (fileInfoHashMap.get(filename) != null)
+                fileInfos.add(fileInfoHashMap.get(filename));
         }
         String jsonData = new Gson().toJson(fileInfos);
         Path path = Paths.get(filePath);
@@ -65,25 +69,30 @@ public class ParseJson {
         HashMap<Integer, Integer> blockIds = new HashMap<>();
         Path path = Paths.get(filePath);
         try {
-            JsonArray jsonArray = new Gson().fromJson(new String(Files.readAllBytes(path)), JsonArray.class);
-            if (jsonArray == null) {
+            String jsonData = new String(Files.readAllBytes(path));
+//            create type for json
+            Type listType = new TypeToken<ArrayList<Block>>() {
+            }.getType();
+            ArrayList<Block> list = new Gson().fromJson(jsonData, listType);
+            if (list == null) {
                 return blockIds;
             }
-            for (JsonElement jsonElement : jsonArray) {
-                blockIds.add(jsonElement.getAsInt());
+            for (Block block : list) {
+                blockIds.put(block.id, block.size);
             }
             return blockIds;
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return null;
+        return blockIds;
     }
 
-    public static void writeBackDataInfo(String filePath, HashSet<Integer> blockIds) {
-        ArrayList<Integer> blockIdList = new ArrayList<>();
-        for (Integer blockId : blockIds) {
-            blockIdList.add(blockId);
+    public static void writeBackDataInfo(String filePath, HashMap<Integer, Integer> blockIds) {
+        ArrayList<Block> blockIdList = new ArrayList<>();
+        for (Integer blockId : blockIds.keySet()) {
+            blockIdList.add(new Block(blockId, blockIds.get(blockId)));
         }
+
         String jsonData = new Gson().toJson(blockIdList);
         Path path = Paths.get(filePath);
         try {

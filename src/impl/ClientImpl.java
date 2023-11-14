@@ -24,6 +24,7 @@ public class ClientImpl implements Client {
 
 
     private static final int MAX_DATA_NODE = 4;
+    private static final int maxBlockSize = 4 * 1024;
     private NameNode nameNode;
     private DataNode[] dataNodes = new DataNode[MAX_DATA_NODE];
 
@@ -36,11 +37,28 @@ public class ClientImpl implements Client {
     public int open(String filepath, int mode) {
         String fileInfo = nameNode.open(filepath, mode);
         if (Objects.equals(fileInfo, "null")) {
+            System.out.println("server");
             return -1;
         }
         File file = File.fromString(fileInfo);
-        int fd = Math.toIntExact(file.fd.getId());
+        int fd;
+        if (file != null) {
+            fd = Math.toIntExact(file.fd.getId());
+        } else {
+            System.out.println("INFO: open failed");
+            return -1;
+        }
         fdMap.put(fd, file);
+        boolean isCreateNewFile = true;
+        for (int size : file.fi.blockIdToSize.values()) {
+            if (size != 0) {
+                isCreateNewFile = false;
+                break;
+            }
+        }
+        if (isCreateNewFile) {
+            file.fi.blockIdToDataNodeId.forEach((k, v) -> appendContent(file, k, v, fd, new byte[0]));
+        }
         return fd;
     }
 
@@ -55,33 +73,69 @@ public class ClientImpl implements Client {
             System.out.println("INFO: append not allowed");
             return;
         }
+//        nextBlockId means the last block
         Set<Integer> blockIds = file.fi.blockIdToDataNodeId.keySet();
-        int maxBlockId = blockIds.stream().max(Integer::compareTo).orElse(-1);
-        int dataNodeId = file.fi.blockIdToDataNodeId.get(maxBlockId);
-        DataNode dataNode = dataNodes[dataNodeId];
+        int nextBlockId = blockIds.stream().max(Integer::compareTo).orElse(-1);
+        int dataNodeId = file.fi.blockIdToDataNodeId.get(nextBlockId);
 
-//        TODO
-        byte[] send = new byte[4 * 1024];
-        System.arraycopy(bytes, 0, send, 0, bytes.length);
-        dataNode.append(maxBlockId, send);
-
-        updateFile(file.fi.fileName);
-        System.out.println("INFO: write done");
+        if (appendContent(file, nextBlockId, dataNodeId, fd, bytes))
+            System.out.println("INFO: write done");
     }
 
-    //    access nameNode after append to update if necessary
-    private void updateFile(String fileName) {
-        String info = nameNode.updateFile(fileName);
-        if (info.equals("null")) {
-            return;
-        }
+    private boolean appendContent(File file, int nextBlockId, int dataNodeId, int fd, byte[] append) {
+        DataNode dataNode = dataNodes[dataNodeId];
+        //      update blockIdToSize blockIdToDataNodeId and NameNode
+//        for loop
+        int lastSize = file.fi.blockIdToSize.get(nextBlockId);
+        boolean quit = true;
+//        for update
+        ArrayList<Integer> newBlockIdList = new ArrayList<>();
+        int oldBlockId = nextBlockId;
 
+        while (true) {
+            if (lastSize + append.length > maxBlockSize) {
+                quit = false;
+            }
+            int sendLength = Math.min(maxBlockSize - lastSize, append.length);
+
+            byte[] send = new byte[maxBlockSize];
+            System.arraycopy(append, 0, send, 0, sendLength);
+            dataNode.append(nextBlockId, send);
+            append = Arrays.copyOfRange(append, sendLength, append.length);
+
+            file.fi.blockIdToSize.put(nextBlockId, lastSize + sendLength);
+            if (quit)
+                break;
+            else {
+                quit = true;
+                nextBlockId = dataNode.randomBlockId();
+                newBlockIdList.add(nextBlockId);
+                lastSize = 0;
+            }
+        }
+        if (!newBlockIdList.isEmpty() || append.length > 0) {
+            updateFileInfo(fd, file.fi.fileName, oldBlockId, newBlockIdList);
+        }
+        return true;
+    }
+
+    private void updateFileInfo(int fd, String fileName, int oldBlockId, ArrayList<Integer> newBlockIdList) {
+        File file = fdMap.get(fd);
+        int dataNodeId = file.fi.blockIdToDataNodeId.get(oldBlockId);
+        for (Integer blockId : newBlockIdList) {
+            file.fi.blockIdToDataNodeId.put(blockId, dataNodeId);
+        }
+        FileInfo fileInfo = file.fi;
         fdMap.forEach((k, v) -> {
             if (v.fi.fileName.equals(fileName)) {
-                fdMap.get(k).fi = FileInfo.fromString(info);
+                fdMap.get(k).fi = fileInfo;
             }
         });
+        for (Integer blockId : newBlockIdList) {
+            nameNode.registerBlock(oldBlockId, blockId);
+        }
     }
+
 
     @Override
     public byte[] read(int fd) {
@@ -115,7 +169,10 @@ public class ClientImpl implements Client {
 
     @Override
     public void close(int fd) {
-        nameNode.close(fdMap.get(fd).fd.toString());
+        if (fdMap.containsKey(fd)) {
+            nameNode.close(fdMap.get(fd).fd.toString());
+            fdMap.remove(fd);
+        } else System.out.println("INFO: fd not found");
     }
 
     void parse(String str) {
@@ -172,7 +229,6 @@ public class ClientImpl implements Client {
                 System.out.println("Usage: append <fd> <content>");
                 return;
             }
-
             Pattern pattern = Pattern.compile(args[1]);
             Matcher matcher = pattern.matcher(str);
             if (!matcher.find()) {
@@ -200,11 +256,16 @@ public class ClientImpl implements Client {
                 System.out.println("Usage: exit");
                 return;
             }
+            exit();
             System.out.println("INFO: bye");
             System.exit(0);
         } else {
             System.out.println("INFO: unknown command");
         }
+    }
+
+    private void exit() {
+        fdMap.keySet().forEach(this::close);
     }
 
     public ClientImpl() {

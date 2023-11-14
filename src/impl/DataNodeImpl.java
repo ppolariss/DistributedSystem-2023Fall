@@ -3,6 +3,7 @@ package impl;
 
 import api.DataNodePOA;
 import api.NameNode;
+import com.google.gson.Gson;
 import utils.ParseJson;
 
 import java.nio.file.Files;
@@ -11,11 +12,10 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 
 public class DataNodeImpl extends DataNodePOA {
     private static final int MAX_DATA_NODE = 4;
-    private static final int maxBlockSize = 4 * 1024;
+//    private static final int maxBlockSize = 4 * 1024;
 
     public static int numberOfDataNode = 0;
 
@@ -23,7 +23,7 @@ public class DataNodeImpl extends DataNodePOA {
 
     private static String fileName = "node/dataNode/dataNode";
 
-    private HashMap<Integer, Integer> blockIds ;
+    private HashMap<Integer, Integer> blockIds;
 
     public DataNodeImpl() {
         numberOfDataNode++;
@@ -60,7 +60,7 @@ public class DataNodeImpl extends DataNodePOA {
             blockIds = new HashMap<>();
         }
 
-        nameNode.registerDataNode(dataNodeId, blockIds.size());
+        nameNode.registerDataNode(dataNodeId, new Gson().toJson(blockIds));
     }
 
 
@@ -69,11 +69,10 @@ public class DataNodeImpl extends DataNodePOA {
         byte[] res = new byte[4 * 1024];
         if (!blockIds.containsKey(blockId)) {
             createBlock(blockId);
-//            System.out.println("INFO: block not found");
             return res;
         }
         try {
-            byte[] fileContent =  Files.readAllBytes(Paths.get(fileName + blockId));
+            byte[] fileContent = Files.readAllBytes(Paths.get(fileName + blockId));
             System.arraycopy(fileContent, 0, res, 0, fileContent.length);
             return res;
         } catch (Exception e) {
@@ -92,23 +91,34 @@ public class DataNodeImpl extends DataNodePOA {
             } else {
                 originData = Files.readAllBytes(Paths.get(fileName + blockId));
             }
-            int len = originData.length + appendData.length;
-            if (len <= maxBlockSize) {
-                byte[] result = new byte[originData.length + appendData.length];
-                System.arraycopy(originData, 0, result, 0, originData.length);
-                System.arraycopy(appendData, 0, result, originData.length, appendData.length);
-                Files.write(Paths.get(fileName + blockId), result);
-                return;
+//            int len = originData.length + appendData.length;
+//            if (len <= maxBlockSize) {
+            int originLength = blockIds.get(blockId);
+            int appendLength = 0;
+            for (byte b : appendData) {
+                if (b != 0) {
+                    appendLength++;
+                }
             }
-
-            byte[] result = new byte[maxBlockSize];
-            System.arraycopy(originData, 0, result, 0, originData.length);
-            System.arraycopy(appendData, 0, result, originData.length, maxBlockSize - originData.length);
+            byte[] result = new byte[originLength + appendLength];
+            System.arraycopy(originData, 0, result, 0, originLength);
+            System.arraycopy(appendData, 0, result, originLength, appendLength);
             Files.write(Paths.get(fileName + blockId), result);
 
-            result = new byte[appendData.length - (maxBlockSize - originData.length)];
-            System.arraycopy(appendData, maxBlockSize - originData.length, result, 0, result.length);
-            addBlock(blockId, result);
+//                update and write back
+            blockIds.put(blockId, originLength + appendLength);
+            close();
+//                return;
+//            }
+//
+//            byte[] result = new byte[maxBlockSize];
+//            System.arraycopy(originData, 0, result, 0, originData.length);
+//            System.arraycopy(appendData, 0, result, originData.length, maxBlockSize - originData.length);
+//            Files.write(Paths.get(fileName + blockId), result);
+//
+//            result = new byte[appendData.length - (maxBlockSize - originData.length)];
+//            System.arraycopy(appendData, maxBlockSize - originData.length, result, 0, result.length);
+//            addBlock(blockId, result);
 
         } catch (Exception e) {
             e.printStackTrace();

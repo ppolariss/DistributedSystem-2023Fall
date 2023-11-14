@@ -10,6 +10,8 @@ public class FileInfo {
     public Integer fileSize;
 
     public HashMap<Integer, Integer> blockIdToDataNodeId;
+
+    public HashMap<Integer, Integer> blockIdToSize;
     public long createTime;
     public long lastModified;
     public long lastAccess;
@@ -35,6 +37,8 @@ public class FileInfo {
         this.fileSize = 0;
         this.blockIdToDataNodeId = new HashMap<>();
         this.blockIdToDataNodeId.put(blockId, dataNodeId);
+        this.blockIdToSize = new HashMap<>();
+        this.blockIdToSize.put(blockId, 0);
         this.createTime = System.currentTimeMillis();
         this.lastModified = System.currentTimeMillis();
         this.lastAccess = System.currentTimeMillis();
