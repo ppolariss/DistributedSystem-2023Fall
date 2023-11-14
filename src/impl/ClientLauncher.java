@@ -1,5 +1,6 @@
 package impl;
 
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class ClientLauncher {
@@ -9,8 +10,15 @@ public class ClientLauncher {
             Scanner in = new Scanner(System.in);
             while (true) {
                 System.out.print(">> ");
-                String s = in.nextLine();
-                client.parse(s);
+                String s;
+                try {
+                    s = in.nextLine();
+                    client.parse(s);
+                } catch (NoSuchElementException nsee) {
+                    s = "exit";
+                    client.parse(s);
+                    break;
+                }
 //            if (string.isEmpty()) {
 //                continue;
 //            }

@@ -37,10 +37,17 @@ public class ParseJson {
                 return fileInfoHashMap;
             }
             for (JsonElement jsonElement : jsonArray) {
-                String filename = jsonElement.getAsJsonObject().get("fileName").getAsString();
-                FileInfo fileInfo = new Gson().fromJson(jsonElement.getAsJsonObject().get("fileInfo"), FileInfo.class);
-                fileInfoHashMap.put(filename, fileInfo);
+//                String filename = jsonElement.getAsJsonObject().get("fileName").getAsString();
+//                FileInfo fileInfo = new Gson().fromJson(jsonElement.getAsJsonObject().get("fileInfo"), FileInfo.class);
+//                fileInfoHashMap.put(filename, fileInfo);
+                FileInfo fileInfo = new Gson().fromJson(jsonElement, FileInfo.class);
+                fileInfoHashMap.put(fileInfo.fileName, fileInfo);
             }
+//            for (String filename : fileInfoHashMap.keySet()) {
+//
+//                System.out.println(filename);
+//                System.out.println(fileInfoHashMap.get(filename).toString());
+//            }
             return fileInfoHashMap;
         } catch (Exception e) {
             e.printStackTrace();
@@ -69,6 +76,10 @@ public class ParseJson {
         HashMap<Integer, Integer> blockIds = new HashMap<>();
         Path path = Paths.get(filePath);
         try {
+            if (Files.notExists(path)) {
+                Files.createFile(path);
+                return blockIds;
+            }
             String jsonData = new String(Files.readAllBytes(path));
 //            create type for json
             Type listType = new TypeToken<ArrayList<Block>>() {

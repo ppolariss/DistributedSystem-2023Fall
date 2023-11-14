@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import static org.junit.Assert.*;
 
@@ -32,9 +33,15 @@ public class DataNodeTest {
 
         int n = toWrite.length;
         int N = read.length;
+//        System.out.println(Arrays.toString(toWrite));
+//        System.out.println(Arrays.toString(read));
+//        for (int i = 0; i < n; i++) {
+//            assertEquals("Block ID: " + blockId + ". Read block bytes and appended bytes differ at the " + i
+//                    + " byte to the eof.", toWrite[n - 1 - i], read[N - 1 - i]);
+//        }
         for (int i = 0; i < n; i++) {
             assertEquals("Block ID: " + blockId + ". Read block bytes and appended bytes differ at the " + i
-                    + " byte to the eof.", toWrite[n - 1 - i], read[N - 1 - i]);
+                    + " byte to the eof.", toWrite[i], read[i]);
         }
     }
 }

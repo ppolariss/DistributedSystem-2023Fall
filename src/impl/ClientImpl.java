@@ -26,7 +26,7 @@ public class ClientImpl implements Client {
     private static final int MAX_DATA_NODE = 4;
     private static final int maxBlockSize = 4 * 1024;
     private NameNode nameNode;
-    private DataNode[] dataNodes = new DataNode[MAX_DATA_NODE];
+    private DataNode[] dataNodes = new DataNode[MAX_DATA_NODE + 1];
 
 
     //    fdMap: fd -> file
@@ -37,7 +37,7 @@ public class ClientImpl implements Client {
     public int open(String filepath, int mode) {
         String fileInfo = nameNode.open(filepath, mode);
         if (Objects.equals(fileInfo, "null")) {
-            System.out.println("server");
+//            System.out.println("server");
             return -1;
         }
         File file = File.fromString(fileInfo);
@@ -56,8 +56,8 @@ public class ClientImpl implements Client {
                 break;
             }
         }
-        if (isCreateNewFile) {
-            file.fi.blockIdToDataNodeId.forEach((k, v) -> appendContent(file, k, v, fd, new byte[0]));
+        if (isCreateNewFile && !file.fi.blockIdToDataNodeId.isEmpty()) {
+            file.fi.blockIdToDataNodeId.forEach((k, v) -> appendContent(file, k, v, new byte[0]));
         }
         return fd;
     }
@@ -78,11 +78,12 @@ public class ClientImpl implements Client {
         int nextBlockId = blockIds.stream().max(Integer::compareTo).orElse(-1);
         int dataNodeId = file.fi.blockIdToDataNodeId.get(nextBlockId);
 
-        if (appendContent(file, nextBlockId, dataNodeId, fd, bytes))
+        if (appendContent(file, nextBlockId, dataNodeId, bytes))
             System.out.println("INFO: write done");
     }
 
-    private boolean appendContent(File file, int nextBlockId, int dataNodeId, int fd, byte[] append) {
+    private boolean appendContent(File file, int nextBlockId, int dataNodeId, byte[] append) {
+        boolean isCreateNewFile = append.length == 0;
         DataNode dataNode = dataNodes[dataNodeId];
         //      update blockIdToSize blockIdToDataNodeId and NameNode
 //        for loop
@@ -113,27 +114,30 @@ public class ClientImpl implements Client {
                 lastSize = 0;
             }
         }
-        if (!newBlockIdList.isEmpty() || append.length > 0) {
-            updateFileInfo(fd, file.fi.fileName, oldBlockId, newBlockIdList);
+        if (!isCreateNewFile) {
+//            File file = fdMap.get(fd);
+//            int dataNodeId = file.fi.blockIdToDataNodeId.get(oldBlockId);
+            for (Integer blockId : newBlockIdList) {
+                file.fi.blockIdToDataNodeId.put(blockId, dataNodeId);
+            }
+            file.fi.lastModified = System.currentTimeMillis();
+
+            updateFileInfo(file.fi.fileName, file.fi);
         }
         return true;
     }
 
-    private void updateFileInfo(int fd, String fileName, int oldBlockId, ArrayList<Integer> newBlockIdList) {
-        File file = fdMap.get(fd);
-        int dataNodeId = file.fi.blockIdToDataNodeId.get(oldBlockId);
-        for (Integer blockId : newBlockIdList) {
-            file.fi.blockIdToDataNodeId.put(blockId, dataNodeId);
-        }
-        FileInfo fileInfo = file.fi;
+    private void updateFileInfo(String fileName, FileInfo fileInfo) {
         fdMap.forEach((k, v) -> {
             if (v.fi.fileName.equals(fileName)) {
                 fdMap.get(k).fi = fileInfo;
             }
         });
-        for (Integer blockId : newBlockIdList) {
-            nameNode.registerBlock(oldBlockId, blockId);
-        }
+//        for (Integer blockId : newBlockIdList) {
+//            nameNode.registerBlock(oldBlockId, blockId);
+//        }
+//        System.out.println(fileInfo.toString());
+        nameNode.registerBlock(fileName, fileInfo.toString());
     }
 
 
@@ -164,6 +168,9 @@ public class ClientImpl implements Client {
             System.arraycopy(bytes, 0, tmp, res.length, bytes.length);
             res = tmp;
         }
+
+        file.fi.lastAccess = System.currentTimeMillis();
+        updateFileInfo(file.fi.fileName, file.fi);
         return res;
     }
 
@@ -222,6 +229,10 @@ public class ClientImpl implements Client {
                 System.out.println(new String(read));
             }
         } else if (args[0].equals(CMD_APPEND)) {
+            if (args.length < 3) {
+                System.out.println("Usage: append <fd> <content>");
+                return;
+            }
             int fd;
             try {
                 fd = Integer.parseInt(args[1]);
@@ -265,7 +276,13 @@ public class ClientImpl implements Client {
     }
 
     private void exit() {
-        fdMap.keySet().forEach(this::close);
+        if (fdMap.isEmpty()) {
+            return;
+        }
+        while (!fdMap.keySet().isEmpty()) {
+            close(fdMap.keySet().iterator().next());
+        }
+//        fdMap.keySet().forEach(this::close);
     }
 
     public ClientImpl() {

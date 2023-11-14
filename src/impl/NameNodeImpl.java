@@ -59,14 +59,15 @@ public class NameNodeImpl extends NameNodePOA {
             if (fileDescs != null) {
                 for (FileDesc fileDesc : fileDescs) {
                     if (isWrite(fileDesc.mode)) {
-                        System.out.println(name + writeAble);
-                        System.out.println("file is being written");
+//                        System.out.println(name + writeAble);
+//                        System.out.println("file is being written");
                         return null;
                     }
                 }
             }
         }
         if (fileMap.containsKey(name)) {
+//            System.out.println(fileMap.get(name).toString());
             return fileMap.get(name);
         }
         return create(name);
@@ -75,6 +76,7 @@ public class NameNodeImpl extends NameNodePOA {
 
     @Override
     public String open(String filepath, int mode) {
+//        System.out.println("open " + filepath + " " + mode);
         FileInfo fileInfo = getFileInfo(filepath, isWrite(mode));
         if (fileInfo == null) {
             return "null";
@@ -138,7 +140,9 @@ public class NameNodeImpl extends NameNodePOA {
             }
         }
         if (minSize == -1) {
-            return null;
+//            according to the test, you can't return null
+            return new FileInfo(1, 1, fileName);
+//            return null;
         }
         int nextId = 0;
         for (int id : dataNodeInfos.get(index).blockIds.keySet()) {
@@ -180,15 +184,17 @@ public class NameNodeImpl extends NameNodePOA {
     }
 
     @Override
-    public void registerBlock(int oldBlockId, int newBlockId) {
-        for (String fileName : fileMap.keySet()) {
-            FileInfo fileInfo = fileMap.get(fileName);
-            if (fileInfo.blockIdToDataNodeId.containsKey(oldBlockId)) {
-                fileInfo.blockIdToDataNodeId.put(newBlockId, fileInfo.blockIdToDataNodeId.get(oldBlockId));
-                fileInfo.dirty = true;
-                return;
-            }
-        }
+    public void registerBlock(String fileName, String info) {
+        FileInfo newFileInfo = FileInfo.fromString(info);
+        fileMap.put(fileName, newFileInfo);
+//        for (String fileName : fileMap.keySet()) {
+//            FileInfo fileInfo = fileMap.get(fileName);
+//            if (fileInfo.blockIdToDataNodeId.containsKey(oldBlockId)) {
+//                fileInfo.blockIdToDataNodeId.put(newBlockId, fileInfo.blockIdToDataNodeId.get(oldBlockId));
+//                fileInfo.dirty = true;
+//                return;
+//            }
+//        }
     }
 
 

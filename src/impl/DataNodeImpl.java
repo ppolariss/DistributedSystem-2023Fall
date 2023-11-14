@@ -46,7 +46,9 @@ public class DataNodeImpl extends DataNodePOA {
             System.out.println("INFO: DataNode number exceed maxDataNode");
             return;
         }
-        fileName += dataNodeId + "/";
+        if (fileName.equals("node/dataNode/dataNode"))
+            fileName += dataNodeId + "/";
+        else fileName = "node/dataNode/dataNode" + dataNodeId + "/";
         Path path = Paths.get(fileName);
         if (!Files.exists(path)) {
             try {
@@ -59,8 +61,8 @@ public class DataNodeImpl extends DataNodePOA {
         if (blockIds == null) {
             blockIds = new HashMap<>();
         }
-
-        nameNode.registerDataNode(dataNodeId, new Gson().toJson(blockIds));
+        if (nameNode != null)
+            nameNode.registerDataNode(dataNodeId, new Gson().toJson(blockIds));
     }
 
 
@@ -125,17 +127,20 @@ public class DataNodeImpl extends DataNodePOA {
         }
     }
 
-    public void addBlock(int blockId, byte[] data) {
-        int newBlockId = randomBlockId();
-        nameNode.registerBlock(blockId, newBlockId);
-        append(newBlockId, data);
-        close();
-    }
+//    public void addBlock(int blockId, byte[] data) {
+//        int newBlockId = randomBlockId();
+//        nameNode.registerBlock(blockId, newBlockId);
+//        append(newBlockId, data);
+//        close();
+//    }
 
     @Override
     public int randomBlockId() {
         ArrayList<Integer> bis = new ArrayList<>(blockIds.keySet());
-        int newBlockId = Collections.max(bis) + 1;
+        int newBlockId;
+        if (bis.isEmpty()) {
+            newBlockId = 1;
+        } else newBlockId = Collections.max(bis) + 1;
         createBlock(newBlockId);
         return newBlockId;
     }
